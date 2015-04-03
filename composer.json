@@ -1,6 +1,6 @@
 {
   "name": "necrotex/laravel-brave-core",
-  "description": "Laravel 5 Brave Core Integration",
+  "description": "Laravel 5 Brave Collective Core Services Integration",
   "keywords": ["bravecollective", "laravel", "core", "auth"],
   "license": "MIT",
   "authors": [

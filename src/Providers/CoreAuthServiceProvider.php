@@ -17,11 +17,15 @@ class CoreAuthServiceProvider extends ServiceProvider {
 	 * @return void
 	 */
 	public function boot() {
+		
+		$this->publishes([
+		    __DIR__.'/../Database/Migrations/' => base_path('/database/migrations')
+		], 'migrations');
+
 		$this->app['auth']->extend('coreauth', function($app) {
 			$provider = new CoreAuthUserServiceProvider(new CoreAuthUser());
 
 			return new \Illuminate\Auth\Guard($provider, $app['session.store']);
-
 		});
 	}
 
