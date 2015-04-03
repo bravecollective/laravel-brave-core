@@ -1,7 +1,7 @@
 Laravel 5 Brave Collective Core Services Integration
 ===================
 [![Laravel](https://img.shields.io/badge/Laravel-5.0-orange.svg?style=flat-square)](http://laravel.com)
-[![Source](https://img.shields.io/badge/source-laravel--brave--core-blue.svg?style=flat-square)](https://github.com/caffeinated/modules)
+[![Source](https://img.shields.io/badge/source-laravel--brave--core-blue.svg?style=flat-square)](https://github.com/necrotex/laravel-brave-core)
 [![License](http://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square)](https://tldrlegal.com/license/mit-license)
 
 
