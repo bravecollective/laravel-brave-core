@@ -17,7 +17,7 @@ class CreateCoreAuthUsersTable extends Migration {
 	{
 		Schema::create('core_auth_users', function(Blueprint $table)
 		{
-			$table->increments('id')->unsigned();
+			$table->integer('id')->unsigned()->primary();
 			$table->string('token', 64)->index();
 			$table->string('remember_token', 160)->index();
 			$table->string('character_name', 255)->index();
