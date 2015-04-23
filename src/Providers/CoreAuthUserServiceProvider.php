@@ -148,7 +148,7 @@ class CoreAuthUserServiceProvider implements UserProvider {
 		});
 
 		// check for existing user data or create a blank model if none exists
-		$user = CoreAuthUser::findOrNew($result->character->id);
+		$user = CoreAuthUser::findOrNew(['id' => $result->character->id]);
 
 		// set the base user data
 		$user->token = $token;
