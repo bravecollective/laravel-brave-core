@@ -1,11 +1,13 @@
 <?php namespace Brave\Core\Models;
 
+use Illuminate\Database\Eloquent\Model;
+
 /**
  * Core Auth Group Model
  *
  * @package Brave\Core\Models
  */
-class CoreAuthGroup extends Eloquent{
+class CoreAuthGroup extends Model {
 
 	/**
 	 * The database table used by the model.
@@ -27,7 +29,6 @@ class CoreAuthGroup extends Eloquent{
 	 * @var array
 	 */
 	protected $fillable = array(
-		'user_id',
 		'name',
 	);
 
@@ -36,7 +37,7 @@ class CoreAuthGroup extends Eloquent{
 	 */
 	public function users()
 	{
-		return $this->belongsToMany('\Brave\Core\Models\CoreAuthUser', 'core_auth_groups_map', 'group_id', 'user_id');
+		return $this->belongsToMany('\Brave\Core\Models\CoreAuthUser', 'core_auth_groups_map', 'group_id', 'user_id')->withTimestamps();
 	}
 
 }
