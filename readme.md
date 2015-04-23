@@ -37,3 +37,7 @@ Edit the config/auth.php file:
 Usage
 ------------------
 Create an API Object with `App::make('CoreApi')`.
+
+License
+------------------
+Contents are MIT Licensed, see the LICENSE file for more info.
