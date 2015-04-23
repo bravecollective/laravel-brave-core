@@ -18,7 +18,7 @@ class CreateCoreAuthGroupsTable extends Migration {
 		Schema::create('core_auth_groups', function(Blueprint $table)
 		{
 			$table->increments('id')->unsigned();
-			$table->text('name')->index();
+			$table->text('name')->unique(512);
 			$table->timestamps();
 		});
 
@@ -27,6 +27,8 @@ class CreateCoreAuthGroupsTable extends Migration {
 			$table->integer('user_id')->unsigned()->index();
 			$table->integer('group_id')->unsigned()->index();
 			$table->timestamps();
+
+			$table->unique(['user_id', 'group_id']);
 		});
 	}
 

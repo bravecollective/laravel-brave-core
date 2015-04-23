@@ -15,7 +15,7 @@ class CreateCoreAuthPermissionsTable extends Migration {
 		Schema::create('core_auth_permissions', function(Blueprint $table)
 		{
 			$table->increments('id')->unsigned();
-			$table->text('name')->index();
+			$table->text('name')->unique(512);
 			$table->timestamps();
 		});
 
@@ -24,6 +24,8 @@ class CreateCoreAuthPermissionsTable extends Migration {
 			$table->integer('user_id')->unsigned()->index();
 			$table->integer('permission_id')->unsigned()->index();
 			$table->timestamps();
+
+			$table->unique(['user_id', 'permission_id']);
 		});
 	}
 
