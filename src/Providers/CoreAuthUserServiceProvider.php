@@ -9,11 +9,22 @@ use Illuminate\Contracts\Auth\UserProvider;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Config;
 
+/**
+ * Class CoreAuthUserServiceProvider
+ *
+ * @package Brave\Core\Providers
+ */
 class CoreAuthUserServiceProvider implements UserProvider {
 
+	/**
+	 * @var CoreAuthUser
+	 */
 	protected $model;
 
-	public function __construct(CoreAuthUser $model){
+	/**
+	 * @param CoreAuthUser $model
+	 */
+	public function __construct(CoreAuthUser $model) {
 		$this->model = $model;
 	}
 
@@ -21,7 +32,6 @@ class CoreAuthUserServiceProvider implements UserProvider {
 	 * Retrieve a user by their unique identifier.
 	 *
 	 * @param  mixed $identifier
-	 *
 	 * @return \Illuminate\Contracts\Auth\Authenticatable|null
 	 */
 	public function retrieveById($identifier) {
@@ -31,9 +41,8 @@ class CoreAuthUserServiceProvider implements UserProvider {
 	/**
 	 * Retrieve a user by by their unique identifier and "remember me" token.
 	 *
-	 * @param  mixed  $identifier
+	 * @param  mixed $identifier
 	 * @param  string $token
-	 *
 	 * @return \Illuminate\Contracts\Auth\Authenticatable|null
 	 */
 	public function retrieveByToken($identifier, $token) {
@@ -44,8 +53,7 @@ class CoreAuthUserServiceProvider implements UserProvider {
 	 * Update the "remember me" token for the given user in storage.
 	 *
 	 * @param  \Illuminate\Contracts\Auth\Authenticatable $user
-	 * @param  string                                     $token
-	 *
+	 * @param  string $token
 	 * @return void
 	 */
 	public function updateRememberToken(Authenticatable $user, $token) {
@@ -56,30 +64,25 @@ class CoreAuthUserServiceProvider implements UserProvider {
 	 * Retrieve a user by the given credentials.
 	 *
 	 * @param  array $credentials
-	 *
 	 * @return \Illuminate\Contracts\Auth\Authenticatable|null
 	 */
 	public function retrieveByCredentials(array $credentials) {
 
-		try{
+		try {
 
 			$user = $this->model->where('token', '=', $credentials['token'])->get();
 
-			if(isset($user[0])){
+			if (isset($user[0])) {
 				return $user[0];
-			} else {
+			}
+			else {
+
 				$api = App::make('CoreApi');
+				$result = $api->core->info(array('token' => $credentials['token']));
 
-				try {
-					$result = $api->core->info(array('token' => $credentials['token']));
-				} catch(Exception $e){
+				if (!isset($result->character->name)) {
 					//TODO: What should happen if shit hits the fan?
-					dd($e->getMessage());
-				}
-
-				if(!isset($result->character->name)){
-					//TODO: What should happen if shit hits the fan?
-					dd($e->getMessage());
+					return false;
 				}
 
 				$user = $this->updateUser($credentials['token'], $result);
@@ -87,9 +90,10 @@ class CoreAuthUserServiceProvider implements UserProvider {
 				return $user;
 			}
 		}
-		catch(Exception $e) {
+		catch (Exception $e) {
 			//TODO: What should happen if shit hits the fan?
-			dd($e->getMessage());
+			\Log::error($e->getMessage());
+			\Redirect::route('login')->with('flash_error', 'Login Failed, Please Try Again');
 		}
 	}
 
@@ -97,13 +101,12 @@ class CoreAuthUserServiceProvider implements UserProvider {
 	 * Validate a user against the given credentials.
 	 *
 	 * @param  \Illuminate\Contracts\Auth\Authenticatable $user
-	 * @param  array                                      $credentials
-	 *
+	 * @param  array $credentials
 	 * @return bool
 	 */
 	public function validateCredentials(Authenticatable $user, array $credentials) {
 
-		if(isset($user->token) and $user->token == $credentials['token']){
+		if (isset($user->token) and $user->token == $credentials['token']) {
 			return true;
 		}
 
@@ -112,28 +115,35 @@ class CoreAuthUserServiceProvider implements UserProvider {
 
 			$result = $api->core->info(array('token' => $credentials['token']));
 
-			if(!isset($result->character->name)) {
+			if (!isset($result->character->name)) {
 				//TODO: What should happen if shit hits the fan?
-				dd($e->getMessage());
+				return false;
 			}
 
 			$this->updateUser($credentials['token'], $result);
 			return true;
 
-		} catch(Exception $e) {
+		}
+		catch (Exception $e) {
 			//TODO: What should happen if shit hits the fan?
-			dd($e->getMessage());
+			\Log::error($e->getMessage());
+			\Redirect::route('login')->with('flash_error', 'Login Failed, Please Try Again');
 		}
 	}
 
-	public function updateUser($token, $result){
+	/**
+	 * @param $token
+	 * @param $result
+	 * @return mixed
+	 */
+	public function updateUser($token, $result) {
 
 		// filter permissions and save only the relevant ones
 		$namespace = str_finish(Config::get('core.application-group-base'), '.');
 		$perms = $result->perms;
 
 		// get relevant permissions
-		$relevant_perms = array_filter($perms, function($var) use ($namespace) {
+		$relevant_perms = array_filter($perms, function ($var) use ($namespace) {
 			return starts_with($var, $namespace);
 		});
 
@@ -142,19 +152,20 @@ class CoreAuthUserServiceProvider implements UserProvider {
 
 		// set the base user data
 		$user->token = $token;
+		$user->status = 1;
 		$user->character_name = $result->character->name;
 		$user->alliance_id = $result->alliance->id;
 		$user->alliance_name = $result->alliance->name;
 
 		// save user Core Groups
 		$groups = [];
-		foreach ($relevant_perms as $group) {
+		foreach ($result->tags as $group) {
 			$group = CoreAuthGroup::findOrNew(['name' => $group]);
 			$group->save();
 			$groups[] = $group->id;
 		}
 		if (!empty($groups)) {
-			$user->groups()->sync($groups);
+			$user->groups->sync($groups);
 		}
 
 		// Save user Core Permissions
@@ -165,7 +176,7 @@ class CoreAuthUserServiceProvider implements UserProvider {
 			$permissions[] = $perm->id;
 		}
 		if (!empty($permissions)) {
-			$user->permissions()->sync($permissions);
+			$user->permissions->sync($permissions);
 		}
 
 		// Save full user model
