@@ -148,7 +148,7 @@ class CoreAuthUserServiceProvider implements UserProvider {
 		});
 
 		// check for existing user data or create a blank model if none exists
-		$user = CoreAuthUser::findOrNew(['id' => $result->character->id]);
+		$user = CoreAuthUser::firstOrCreate(['id' => $result->character->id]);
 
 		// set the base user data
 		$user->token = $token;
@@ -160,23 +160,23 @@ class CoreAuthUserServiceProvider implements UserProvider {
 		// save user Core Groups
 		$groups = [];
 		foreach ($result->tags as $group) {
-			$group = CoreAuthGroup::findOrNew(['name' => $group]);
-			$group->save();
-			$groups[] = $group->id;
+			\Log::info('Processing Group "'.$group.'" for user "'.$result->character->name.'"');
+			$groupObj = CoreAuthGroup::firstOrCreate(['name' => $group]);
+			$groups[] = $groupObj->id;
 		}
 		if (!empty($groups)) {
-			$user->groups->sync($groups);
+			$user->groups()->sync($groups);
 		}
 
 		// Save user Core Permissions
 		$permissions = [];
-		foreach ($relevant_perms as $permission) {
-			$perm = CoreAuthPermission::findOrNew(['name' => $permission]);
-			$perm->save();
-			$permissions[] = $perm->id;
+		foreach ($relevant_perms as $perm) {
+			\Log::info('Processing Permission "'.$perm.'" for user "'.$result->character->name.'"');
+			$permObj = CoreAuthPermission::firstOrCreate(['name' => $perm]);
+			$permissions[] = $permObj->id;
 		}
 		if (!empty($permissions)) {
-			$user->permissions->sync($permissions);
+			$user->permissions()->sync($permissions);
 		}
 
 		// Save full user model

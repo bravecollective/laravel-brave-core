@@ -1,11 +1,13 @@
 <?php namespace Brave\Core\Models;
 
+use Illuminate\Database\Eloquent\Model;
+
 /**
  * Core Auth Permission Model
  *
  * @package Brave\Core\Models
  */
-class CoreAuthPermission extends Eloquent{
+class CoreAuthPermission extends Model {
 
 	/**
 	 * The database table used by the model.
@@ -27,7 +29,6 @@ class CoreAuthPermission extends Eloquent{
 	 * @var array
 	 */
 	protected $fillable = array(
-		'user_id',
 		'name',
 	);
 
@@ -38,6 +39,6 @@ class CoreAuthPermission extends Eloquent{
 	 */
 	public function users()
 	{
-		return $this->belongsToMany('\Brave\Core\Models\CoreAuthUser', 'core_auth_permissions_map', 'permission_id', 'user_id');
+		return $this->belongsToMany('\Brave\Core\Models\CoreAuthUser', 'core_auth_permissions_map', 'permission_id', 'user_id')->withTimestamps();
 	}
 }
