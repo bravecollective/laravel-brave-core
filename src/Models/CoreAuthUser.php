@@ -35,8 +35,6 @@ class CoreAuthUser extends Model implements Authenticatable {
 		'alliance_id',
 		'alliance_name',
 		'status',
-		'core_permissions',
-		'core_groups'
 	];
 
 	/**
