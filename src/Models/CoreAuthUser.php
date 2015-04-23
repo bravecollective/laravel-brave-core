@@ -3,6 +3,11 @@
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Contracts\Auth\Authenticatable;
 
+/**
+ * Class CoreAuthUser
+ *
+ * @package Brave\Core\Models
+ */
 class CoreAuthUser extends Model implements Authenticatable {
 
 	/**
@@ -15,13 +20,7 @@ class CoreAuthUser extends Model implements Authenticatable {
 	 * Attribute hidden from the model's JSON form
 	 * @var string
 	 */
-	protected $hidden = ["token"];
-
-	/**
-	 * Role
-	 * @var array
-	 */
-	protected $membership = [];
+	protected $hidden = ["token", "remember_token"];
 
 	/**
 	 * The attributes excluded from the model's JSON form.
@@ -35,15 +34,10 @@ class CoreAuthUser extends Model implements Authenticatable {
 		'character_name',
 		'alliance_id',
 		'alliance_name',
-		'tags',
 		'status',
-		'permission',
+		'core_permissions',
 		'core_groups'
 	];
-
-
-	private $token;
-	private $remember_token;
 
 	/**
 	 * Get the unique identifier for the user.
@@ -93,17 +87,23 @@ class CoreAuthUser extends Model implements Authenticatable {
 	}
 
 	/**
-	 * Checks if a user is member auf a group
+	 * Checks if a user is member of a group
 	 * @param string $group
 	 *
 	 * @return bool
 	 */
-	public function memberOf($group){
-		if(is_null($this->membership)){
-			$this->membership = unserialize($this->core_groups);
-		}
+	public function isMemberOf($group){
+		return $this->groups()->contains($group);
+	}
 
-		return in_array($group, $this->membership);
+	/**
+	 * Checks if a user has a specific permission
+	 * @param string $permission
+	 *
+	 * @return bool
+	 */
+	public function hasPermission($permission){
+		return $this->permissions()->contains($permission);
 	}
 
 	/**
@@ -115,6 +115,26 @@ class CoreAuthUser extends Model implements Authenticatable {
 	 */
 	public function scopeIdByName($query, $name){
 		return $query->select('id')->where('character_name', 'LIKE', "%{$name}%");
+	}
+
+	/**
+	 * Group List Relationship
+	 *
+	 * @return mixed
+	 */
+	public function groups()
+	{
+		return $this->belongsToMany('\Brave\Core\Models\CoreAuthGroup', 'core_auth_groups_map', 'user_id', 'group_id');
+	}
+
+	/**
+	 * Permission List Relationship
+	 *
+	 * @return mixed
+	 */
+	public function permissions()
+	{
+		return $this->belongsToMany('\Brave\Core\Models\CoreAuthPermission', 'core_auth_permissions_map', 'user_id', 'permission_id');
 	}
 
 }
