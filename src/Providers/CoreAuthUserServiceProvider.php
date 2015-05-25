@@ -107,24 +107,18 @@ class CoreAuthUserServiceProvider implements UserProvider {
 
 			$user = $this->auth_user_model->where('token', '=', $credentials['token'])->get();
 
-			if (isset($user[0])) {
-				return $user[0];
+			$api = App::make('CoreApi');
+			$result = $api->core->info(['token' => $credentials['token']]);
+
+			if (!isset($result->character->name)) {
+				\Log::error('CORE Lookup for token('.$credentials['token'].') failed.');
+				\Redirect::route('login')->with('flash_error', 'Core Lookup Failed, Please Try Logging in Again');
+				return false;
 			}
-			else {
 
-				$api = App::make('CoreApi');
-				$result = $api->core->info(['token' => $credentials['token']]);
+			$user = $this->updateUser($credentials['token'], $result);
 
-				if (!isset($result->character->name)) {
-					\Log::error('CORE Lookup for token('.$credentials['token'].') failed.');
-					\Redirect::route('login')->with('flash_error', 'Core Lookup Failed, Please Try Logging in Again');
-					return false;
-				}
-
-				$user = $this->updateUser($credentials['token'], $result);
-
-				return $user;
-			}
+			return $user;
 		}
 		catch (Exception $e) {
 			//TODO: What should happen if shit hits the fan?
