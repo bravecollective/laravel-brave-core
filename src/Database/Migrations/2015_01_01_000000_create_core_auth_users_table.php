@@ -21,6 +21,8 @@ class CreateCoreAuthUsersTable extends Migration {
 			$table->string('token', 64)->index();
 			$table->string('remember_token', 160)->index();
 			$table->string('character_name', 255)->index();
+			$table->integer('corporation_id')->unsigned()->index();
+			$table->string('corporation_name', 255);
 			$table->integer('alliance_id')->unsigned()->index();
 			$table->string('alliance_name', 255);
 			$table->boolean('status')->index();

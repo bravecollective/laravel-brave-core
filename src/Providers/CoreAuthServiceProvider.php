@@ -2,7 +2,8 @@
 
 use Illuminate\Support\ServiceProvider;
 use Brave\Core\Models\CoreAuthUser;
-use Brave\Core\Providers\CoreAuthUserServiceProvider;
+use Brave\Core\Models\CoreAuthPermission;
+use Brave\Core\Models\CoreAuthGroup;
 use Illuminate\Auth\Guard;
 use Illuminate\Auth\AuthManager;
 
@@ -23,9 +24,8 @@ class CoreAuthServiceProvider extends ServiceProvider {
 		], 'migrations');
 
 		$this->app['auth']->extend('coreauth', function($app) {
-			$provider = new CoreAuthUserServiceProvider(new CoreAuthUser());
-
-			return new \Illuminate\Auth\Guard($provider, $app['session.store']);
+			$provider = new CoreAuthUserServiceProvider(new \Config(), new CoreAuthUser(), new CoreAuthPermission(), new CoreAuthGroup());
+			return new Guard($provider, $app['session.store']);
 		});
 	}
 

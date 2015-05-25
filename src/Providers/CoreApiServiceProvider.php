@@ -13,7 +13,11 @@ class CoreApiServiceProvider extends ServiceProvider {
 	 */
 	public function boot()
 	{
-		define('USE_EXT', 'GMP');
+		// Specify GMP Requirements
+		if (!defined('GMP')) {
+			define('USE_EXT', 'GMP');
+		}
+
 		$this->publishes([
 			__DIR__ . '/../Config/bravecore.php' => config_path('bravecore.php'),
 		]);
@@ -28,9 +32,7 @@ class CoreApiServiceProvider extends ServiceProvider {
 	{
 		// Use a singleton here, we only need one instance of the api object
 		$this->app->bind('CoreApi', function($app){
-
 			$config = $app['config']->get('bravecore');
-
 			return new API(
 				$config['application-endpoint'],
 				$config['application-identifier'],

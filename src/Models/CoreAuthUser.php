@@ -122,7 +122,7 @@ class CoreAuthUser extends Model implements Authenticatable {
 	 */
 	public function groups()
 	{
-		return $this->belongsToMany('\Brave\Core\Models\CoreAuthGroup', 'core_auth_groups_map', 'user_id', 'group_id');
+		return $this->belongsToMany('\Brave\Core\Models\CoreAuthGroup', 'core_auth_groups_map', 'user_id', 'group_id')->withTimestamps();
 	}
 
 	/**
@@ -132,7 +132,7 @@ class CoreAuthUser extends Model implements Authenticatable {
 	 */
 	public function permissions()
 	{
-		return $this->belongsToMany('\Brave\Core\Models\CoreAuthPermission', 'core_auth_permissions_map', 'user_id', 'permission_id');
+		return $this->belongsToMany('\Brave\Core\Models\CoreAuthPermission', 'core_auth_permissions_map', 'user_id', 'permission_id')->withTimestamps();
 	}
 
 }

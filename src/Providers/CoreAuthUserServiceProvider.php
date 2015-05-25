@@ -19,13 +19,41 @@ class CoreAuthUserServiceProvider implements UserProvider {
 	/**
 	 * @var CoreAuthUser
 	 */
-	protected $model;
+	protected $auth_user_model;
 
 	/**
-	 * @param CoreAuthUser $model
+	 * @var CoreAuthPermission
 	 */
-	public function __construct(CoreAuthUser $model) {
-		$this->model = $model;
+	protected $auth_permission_model;
+
+	/**
+	 * @var CoreAuthGroup
+	 */
+	protected $auth_group_model;
+
+	/**
+	 * @var Config
+	 */
+	protected $config;
+
+	/**
+	 * @var CoreAuthGroup
+	 */
+	protected $debug;
+
+	/**
+	 * @param CoreAuthUser       $auth_user_model
+	 * @param CoreAuthPermission $auth_permission_model
+	 * @param CoreAuthGroup      $auth_group_model
+	 * @param \Config             $config
+	 */
+	public function __construct(\Config $config, CoreAuthUser $auth_user_model, CoreAuthPermission $auth_permission_model, CoreAuthGroup $auth_group_model) {
+		$this->config = $config;
+		$this->debug = $this->config->get('app.debug');
+
+		$this->auth_user_model = $auth_user_model;
+		$this->auth_permission_model = $auth_permission_model;
+		$this->auth_group_model = $auth_group_model;
 	}
 
 	/**
@@ -35,7 +63,7 @@ class CoreAuthUserServiceProvider implements UserProvider {
 	 * @return \Illuminate\Contracts\Auth\Authenticatable|null
 	 */
 	public function retrieveById($identifier) {
-		return $this->model->find($identifier);
+		return $this->auth_user_model->find($identifier);
 	}
 
 	/**
@@ -46,7 +74,13 @@ class CoreAuthUserServiceProvider implements UserProvider {
 	 * @return \Illuminate\Contracts\Auth\Authenticatable|null
 	 */
 	public function retrieveByToken($identifier, $token) {
-
+		$user = $this->auth_user_model->where('id', '=', $identifier)->where('remember_token', '=', $token)->first();
+		if (isset($user[0])) {
+			return $user[0];
+		}
+		else {
+			return null;
+		}
 	}
 
 	/**
@@ -57,7 +91,8 @@ class CoreAuthUserServiceProvider implements UserProvider {
 	 * @return void
 	 */
 	public function updateRememberToken(Authenticatable $user, $token) {
-		// TODO: Implement updateRememberToken() method.
+		$user->remember_token = $token;
+		$user->save();
 	}
 
 	/**
@@ -70,7 +105,7 @@ class CoreAuthUserServiceProvider implements UserProvider {
 
 		try {
 
-			$user = $this->model->where('token', '=', $credentials['token'])->get();
+			$user = $this->auth_user_model->where('token', '=', $credentials['token'])->get();
 
 			if (isset($user[0])) {
 				return $user[0];
@@ -78,10 +113,11 @@ class CoreAuthUserServiceProvider implements UserProvider {
 			else {
 
 				$api = App::make('CoreApi');
-				$result = $api->core->info(array('token' => $credentials['token']));
+				$result = $api->core->info(['token' => $credentials['token']]);
 
 				if (!isset($result->character->name)) {
-					//TODO: What should happen if shit hits the fan?
+					\Log::error('CORE Lookup for token('.$credentials['token'].') failed.');
+					\Redirect::route('login')->with('flash_error', 'Core Lookup Failed, Please Try Logging in Again');
 					return false;
 				}
 
@@ -93,7 +129,7 @@ class CoreAuthUserServiceProvider implements UserProvider {
 		catch (Exception $e) {
 			//TODO: What should happen if shit hits the fan?
 			\Log::error($e->getMessage());
-			\Redirect::route('login')->with('flash_error', 'Login Failed, Please Try Again');
+			\Redirect::route('login')->with('flash_error', 'Login Check Failed, Please Try Again...');
 		}
 	}
 
@@ -106,17 +142,19 @@ class CoreAuthUserServiceProvider implements UserProvider {
 	 */
 	public function validateCredentials(Authenticatable $user, array $credentials) {
 
-		if (isset($user->token) and $user->token == $credentials['token']) {
+		//
+		if (isset($user->token) and $user->token === $credentials['token']) {
 			return true;
 		}
 
 		try {
 			$api = App::make('CoreApi');
 
-			$result = $api->core->info(array('token' => $credentials['token']));
+			$result = $api->core->info(['token' => $credentials['token']]);
 
 			if (!isset($result->character->name)) {
-				//TODO: What should happen if shit hits the fan?
+				\Log::error('CORE Lookup for token('.$credentials['token'].') failed.');
+				\Redirect::route('login')->with('flash_error', 'Core Lookup Failed, Please Try Logging in Again');
 				return false;
 			}
 
@@ -125,9 +163,8 @@ class CoreAuthUserServiceProvider implements UserProvider {
 
 		}
 		catch (Exception $e) {
-			//TODO: What should happen if shit hits the fan?
 			\Log::error($e->getMessage());
-			\Redirect::route('login')->with('flash_error', 'Login Failed, Please Try Again');
+			\Redirect::route('login')->with('flash_error', 'Login Validation Failed, Please Try Again');
 		}
 	}
 
@@ -138,50 +175,73 @@ class CoreAuthUserServiceProvider implements UserProvider {
 	 */
 	public function updateUser($token, $result) {
 
-		// filter permissions and save only the relevant ones
-		$namespace = str_finish(Config::get('core.application-group-base'), '.');
-		$perms = $result->perms;
+		if ($this->debug) {
+			\Log::info('Processing API Update for Character "'.$result->character->name.'('.$result->character->id.')"');
+		}
 
-		// get relevant permissions
-		$relevant_perms = array_filter($perms, function ($var) use ($namespace) {
+		// filter permissions and save only the relevant ones
+		$namespace = str_finish($this->config->get('bravecore.application-group-base'), '.');
+		$permission_list = $result->perms;
+
+		// get core group memberships
+		$groups = $result->tags;
+
+		// get granted permissions, reduce to app specific permissions
+		$granted_permissions = array_filter($permission_list, function ($var) use ($namespace) {
 			return starts_with($var, $namespace);
 		});
 
-		// check for existing user data or create a blank model if none exists
-		$user = CoreAuthUser::firstOrCreate(['id' => $result->character->id]);
+		// check for existing user data or create a new model if none exists
+		$user = $this->auth_user_model->firstOrCreate(['id' => $result->character->id]);
+
+		$alliance_id = '';
+		$alliance_name = '';
+		try {
+			$alliance_id = $result->alliance->id;
+			$alliance_name = $result->alliance->name;
+		}
+		catch(\Exception $e) {}
 
 		// set the base user data
 		$user->token = $token;
 		$user->status = 1;
 		$user->character_name = $result->character->name;
-		$user->alliance_id = $result->alliance->id;
-		$user->alliance_name = $result->alliance->name;
+		$user->corporation_id = $result->corporation->id;
+		$user->corporation_name = $result->corporation->name;
+		$user->alliance_id = $alliance_id;
+		$user->alliance_name = $alliance_name;
+
+		// save basic char details, so we have a model ID if this is a new model
+		$user->save();
 
 		// save user Core Groups
-		$groups = [];
-		foreach ($result->tags as $group) {
-			\Log::info('Processing Group "'.$group.'" for user "'.$result->character->name.'"');
-			$groupObj = CoreAuthGroup::firstOrCreate(['name' => $group]);
-			$groups[] = $groupObj->id;
+		$user_groups = [];
+		foreach ($groups as $group) {
+			if ($this->debug) {
+				\Log::info('Processing Group "'.$group.'" for user "'.$result->character->name.'"');
+			}
+			$groupObj = $this->auth_group_model->firstOrCreate(['name' => $group]);
+			$user_groups[] = $groupObj->id;
 		}
-		if (!empty($groups)) {
-			$user->groups()->sync($groups);
-		}
+		// Sync group pivot table
+		$user->groups()->sync($user_groups);
 
 		// Save user Core Permissions
-		$permissions = [];
-		foreach ($relevant_perms as $perm) {
-			\Log::info('Processing Permission "'.$perm.'" for user "'.$result->character->name.'"');
-			$permObj = CoreAuthPermission::firstOrCreate(['name' => $perm]);
-			$permissions[] = $permObj->id;
+		$user_permissions = [];
+		foreach ($granted_permissions as $perm) {
+			if ($this->debug) {
+				\Log::info('Processing Permission "'.$perm.'" for user "'.$result->character->name.'"');
+			}
+			$permObj = $this->auth_permission_model->firstOrCreate(['name' => $perm]);
+			$user_permissions[] = $permObj->id;
 		}
-		if (!empty($permissions)) {
-			$user->permissions()->sync($permissions);
-		}
+		// Sync permission pivot table
+		$user->permissions()->sync($user_permissions);
 
 		// Save full user model
 		$user->save();
 
+		// finished updating user
 		return $user;
 	}
 }
