@@ -42,10 +42,10 @@ class CoreAuthUserServiceProvider implements UserProvider {
 	protected $debug;
 
 	/**
+	 * @param ConfigRepository   $config
 	 * @param CoreAuthUser       $auth_user_model
 	 * @param CoreAuthPermission $auth_permission_model
 	 * @param CoreAuthGroup      $auth_group_model
-	 * @param ConfigRepository   $config
 	 */
 	public function __construct(ConfigRepository $config, CoreAuthUser $auth_user_model, CoreAuthPermission $auth_permission_model, CoreAuthGroup $auth_group_model) {
 		$this->config = $config;
