@@ -91,7 +91,7 @@ class CoreAuthUser extends Model implements Authenticatable {
 	 * @return bool
 	 */
 	public function isMemberOf($group){
-		return $this->groups()->contains($group);
+		return $this->groups->contains('name', $group);
 	}
 
 	/**
@@ -101,7 +101,7 @@ class CoreAuthUser extends Model implements Authenticatable {
 	 * @return bool
 	 */
 	public function hasPermission($permission){
-		return $this->permissions()->contains($permission);
+		return $this->permissions->contains('name', $permission);
 	}
 
 	/**
