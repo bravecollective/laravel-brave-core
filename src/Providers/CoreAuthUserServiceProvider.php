@@ -104,11 +104,12 @@ class CoreAuthUserServiceProvider implements UserProvider {
 	public function retrieveByCredentials(array $credentials) {
 
 		try {
-
-			$user = $this->auth_user_model->where('token', '=', $credentials['token'])->get();
-
 			$api = App::make('CoreApi');
 			$result = $api->core->info(['token' => $credentials['token']]);
+
+			if ($this->debug) {
+				Log::debug('CORE Lookup for token('.$credentials['token'].'): '.json_encode($result));
+			}
 
 			if (!isset($result->character->name)) {
 				\Log::error('CORE Lookup for token('.$credentials['token'].') failed.');
