@@ -91,7 +91,7 @@ class CoreAuthUserServiceProvider implements UserProvider {
 	 * @return void
 	 */
 	public function updateRememberToken(Authenticatable $user, $token) {
-		$user->remember_token = $token;
+		$user->setRememberToken($token);
 		$user->save();
 	}
 

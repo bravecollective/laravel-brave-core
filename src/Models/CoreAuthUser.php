@@ -32,6 +32,8 @@ class CoreAuthUser extends Model implements Authenticatable {
 		'token',
 		'remember_token',
 		'character_name',
+		'corporation_id',
+		'corporation_name',
 		'alliance_id',
 		'alliance_name',
 		'status',
