@@ -7,7 +7,7 @@ use Brave\Core\Models\CoreAuthGroup;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Auth\UserProvider;
 use Illuminate\Support\Facades\App;
-use Illuminate\Support\Facades\Config;
+use Illuminate\Config\Repository as ConfigRepository;
 
 /**
  * Class CoreAuthUserServiceProvider
@@ -45,9 +45,9 @@ class CoreAuthUserServiceProvider implements UserProvider {
 	 * @param CoreAuthUser       $auth_user_model
 	 * @param CoreAuthPermission $auth_permission_model
 	 * @param CoreAuthGroup      $auth_group_model
-	 * @param \Config             $config
+	 * @param ConfigRepository   $config
 	 */
-	public function __construct(\Config $config, CoreAuthUser $auth_user_model, CoreAuthPermission $auth_permission_model, CoreAuthGroup $auth_group_model) {
+	public function __construct(ConfigRepository $config, CoreAuthUser $auth_user_model, CoreAuthPermission $auth_permission_model, CoreAuthGroup $auth_group_model) {
 		$this->config = $config;
 		$this->debug = $this->config->get('app.debug');
 
