@@ -176,7 +176,7 @@ class CoreAuthUserServiceProvider implements UserProvider {
 	public function updateUser($token, $result) {
 
 		if ($this->debug) {
-			\Log::info('Processing API Update for Character "'.$result->character->name.'('.$result->character->id.')"');
+			\Log::debug('Processing API Update for Character "'.$result->character->name.'('.$result->character->id.')"');
 		}
 
 		// filter permissions and save only the relevant ones
@@ -218,7 +218,7 @@ class CoreAuthUserServiceProvider implements UserProvider {
 		$user_groups = [];
 		foreach ($groups as $group) {
 			if ($this->debug) {
-				\Log::info('Processing Group "'.$group.'" for user "'.$result->character->name.'"');
+				\Log::debug('Processing Group "'.$group.'" for user "'.$result->character->name.'"');
 			}
 			$groupObj = $this->auth_group_model->firstOrCreate(['name' => $group]);
 			$user_groups[] = $groupObj->id;
@@ -230,7 +230,7 @@ class CoreAuthUserServiceProvider implements UserProvider {
 		$user_permissions = [];
 		foreach ($granted_permissions as $perm) {
 			if ($this->debug) {
-				\Log::info('Processing Permission "'.$perm.'" for user "'.$result->character->name.'"');
+				\Log::debug('Processing Permission "'.$perm.'" for user "'.$result->character->name.'"');
 			}
 			$permObj = $this->auth_permission_model->firstOrCreate(['name' => $perm]);
 			$user_permissions[] = $permObj->id;
