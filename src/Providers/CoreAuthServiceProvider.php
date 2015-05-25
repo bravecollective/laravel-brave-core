@@ -24,7 +24,7 @@ class CoreAuthServiceProvider extends ServiceProvider {
 		], 'migrations');
 
 		$this->app['auth']->extend('coreauth', function($app) {
-			$provider = new CoreAuthUserServiceProvider(new \Config(), new CoreAuthUser(), new CoreAuthPermission(), new CoreAuthGroup());
+			$provider = new CoreAuthUserServiceProvider($app['config'], new CoreAuthUser(), new CoreAuthPermission(), new CoreAuthGroup());
 			return new Guard($provider, $app['session.store']);
 		});
 	}
