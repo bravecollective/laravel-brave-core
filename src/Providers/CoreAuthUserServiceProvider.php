@@ -108,7 +108,7 @@ class CoreAuthUserServiceProvider implements UserProvider {
 			$result = $api->core->info(['token' => $credentials['token']]);
 
 			if ($this->debug) {
-				Log::debug('CORE Lookup for token('.$credentials['token'].'): '.json_encode($result));
+				\Log::debug('CORE Lookup for token('.$credentials['token'].'): '.json_encode($result));
 			}
 
 			if (!isset($result->character->name)) {
