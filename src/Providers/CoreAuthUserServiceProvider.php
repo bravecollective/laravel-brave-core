@@ -172,19 +172,18 @@ class CoreAuthUserServiceProvider implements UserProvider {
 
 		if ($this->debug) {
 			\Log::debug('Processing API Update for Character "'.$result->character->name.'('.$result->character->id.')"');
+			\Log::debug('JSON for Character "'.$result->character->name.'('.$result->character->id.')": '.json_encode($result->character));
 		}
 
-		// filter permissions and save only the relevant ones
-		$namespace = str_finish($this->config->get('bravecore.application-group-base'), '.');
+		// get core permissions and reduce to app specific permissions
 		$permission_list = $result->perms;
-
-		// get core group memberships
-		$groups = $result->tags;
-
-		// get granted permissions, reduce to app specific permissions
+		$namespace = str_finish($this->config->get('bravecore.application-group-base'), '.');
 		$granted_permissions = array_filter($permission_list, function ($var) use ($namespace) {
 			return starts_with($var, $namespace);
 		});
+
+		// get core group memberships
+		$groups = $result->tags;
 
 		// check for existing user data or create a new model if none exists
 		$user = $this->auth_user_model->firstOrCreate(['id' => $result->character->id]);
@@ -206,8 +205,9 @@ class CoreAuthUserServiceProvider implements UserProvider {
 		$user->alliance_id = $alliance_id;
 		$user->alliance_name = $alliance_name;
 
-		// save basic char details, so we have a model ID if this is a new model
+		// save basic char details, so we have a model ID if this is a new model, and reload
 		$user->save();
+		$user = $this->auth_user_model->find($result->character->id);
 
 		// save user Core Groups
 		$user_groups = [];
