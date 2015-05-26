@@ -13,7 +13,7 @@ class CoreApiServiceProvider extends ServiceProvider {
 	 */
 	public function boot()
 	{
-		if (extension_loaded ('gmp')) {
+		if (!extension_loaded('gmp')) {
 			die('PHP Extension "GMP" must be installed with PHP to use BRAVE Core Auth.');
 		}
 
